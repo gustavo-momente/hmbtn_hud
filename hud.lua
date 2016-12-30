@@ -32,7 +32,6 @@ function printAffectionGirls(affectionAddr, name, x, y)
 	for i = 1, affectionThresholdsSize, 1
 	do
 		if(affection <= affectionThresholds[i]) then
-			-- text = ""
 			if (i < affectionThresholdsSize) then
 				text = string.format("%-6s: %5d/%5d/%5d (%s)", name, affection, affectionThresholds[i], 
 									 affectionThresholds[affectionThresholdsSize], affectionNames[i])
@@ -55,12 +54,45 @@ function printAffectionVillager(affectionAddr, name, x, y)
 	gui.text(x, y, text, nul, "topright")
 end
 
+
+function joinMostLeast(most, least)
+	return bit.lshift(most, 16) + least
+end
+
+
+function printLeastMost(leastAddr, mostAddr, x, y, textFortmat, anchor)
+	leastValue = memory.read_u16_le(leastAddr)
+	mostValue = memory.read_u16_le(mostAddr)
+
+	value = joinMostLeast(mostValue, leastValue)
+	text = string.format(textFortmat, value)
+	gui.text(x, y, text, nul, anchor)
+end
+
+
+function printGold(x, y)
+	leastAddr = 0x071A5C
+	mostAddr = 0x071A5E
+	printLeastMost(leastAddr, mostAddr, x, y, "Gold: %d", "bottomleft")
+end
+
+
+function printShipping(x, y)
+	leastAddr = 0x0711F8
+	mostAddr = 0x0711FA
+	printLeastMost(leastAddr, mostAddr, x, y, "Ship: %d", "bottomleft")
+end
+
+
 -- Main
 local staminaAddr = 0x071A12
 local fatigueAddr = 0x071A16
+local farmPercentageAddr = 0x12CDE4
+
 local lineHeight = 16
-local karenAddr = 0x0767A0
+
 local girls = {Ann = 0x076EF0, Elli = 0x077298, Karen = 0x0767A0, Mary = 0x077BBC, Popuri = 0x0786B4}
+
 local villagers = {["Anna"] = 0x0779E6, ["Barley"] = 0x077D8E, ["Basil"] = 0x077812, ["Cliff"] = 0x07763E, 
 				  ["Doctor"] = 0x0770C2, ["Doug"] = 0x076D1A, ["Duke"] = 0x078886, ["Ellen"] = 0x078C2E,
 				  ["Gorumand"] = 0x0798FA, ["Gotz"] = 0x078E02, ["Gray"] = 0x076B46, ["Greg"] = 0x079CA2, 
@@ -69,6 +101,8 @@ local villagers = {["Anna"] = 0x0779E6, ["Barley"] = 0x077D8E, ["Basil"] = 0x077
 				  ["Mayor Thomas"] = 0x078136, ["Pastor Carter"] = 0x07746A, ["Rick"] = 0x0784DE,
 				  ["Saibara"] = 0x076972, ["Sasha"] = 0x0765CA, ["Stu"] = 0x07A04A, ["Won"] = 0x07A21E,
 				  ["Your Baby"] = 0x07A3F2}
+
+
 
 while true do
 
@@ -98,6 +132,12 @@ while true do
 		villagersCount = villagersCount + 1
 	end
 
+	printGold(0, lineHeight)
+	printShipping(0, 2 * lineHeight)
+
+	farmPercentage = memory.read_u16_le(farmPercentageAddr)
+	farmPercentageText = string.format("Farm: %d%%", farmPercentage)
+	gui.text(0, 3 * lineHeight, farmPercentageText, nul, "bottomleft")
 
 	emu.frameadvance()
 end
